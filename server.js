@@ -10,9 +10,7 @@ const client = new Client({
 
 require('dotenv').config();
 
-function formatDate(timestamp) {
-    return new Date(timestamp * 1000).toLocaleString('it');
-}
+client.login(process.env.DISCORD_TOKEN);
 
 client.on('ready', async () => {
     console.log(`Logged in as ${client.user.tag}`);
@@ -27,12 +25,8 @@ client.on('ready', async () => {
         }
 
         tournaments.nodes.forEach(publishTournament)
-    }, /*30 * 60 * 1000*/10000)
+    }, 30 * 60 * 1000)
 });
-
-
-client.login(process.env.DISCORD_TOKEN);
-
 
 function fetchTournaments() {
     const queryBody = {
@@ -41,7 +35,7 @@ function fetchTournaments() {
             "videogameId": 17,
             "coordinates": "49.719152  ,  13.407655",
             "radius": "1600mi",
-            "afterDate": Date.now()
+            "afterDate": Math.floor(Date.now() / 1000)
         },
         operationName: "TournamentsByVideogame"
     }
@@ -90,4 +84,8 @@ function buildEmbeddedTournament(tournament) {
         `)
         .setURL(`https://start.gg/${tournament.url}`)
         .setThumbnail(tournament.images[0]?.url)
+}
+
+function formatDate(timestamp) {
+    return new Date(timestamp * 1000).toLocaleString('it');
 }
