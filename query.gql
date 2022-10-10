@@ -1,0 +1,31 @@
+query TournamentsByVideogame($videogameId: ID!, $coordinates: String!, $radius: String!, $afterDate: Timestamp!) {
+  tournaments(query: {
+    page: 1
+    sortBy: "startAt asc"
+    filter: {
+      location: {
+        distanceFrom: $coordinates,
+        distance: $radius
+      }
+      afterDate: $afterDate
+      videogameIds: [
+        $videogameId
+      ]
+    }
+  }) {
+    nodes {
+      id
+      countryCode
+      registrationClosesAt
+      isOnline
+      startAt
+      url
+      name
+      slug
+      city
+      images {
+        url
+      }
+    }
+  }
+}
