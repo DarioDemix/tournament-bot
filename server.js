@@ -25,7 +25,7 @@ client.on('ready', async () => {
         }
 
         tournaments.nodes.forEach(publishTournament)
-    }, 30 * 60 * 1000)
+    }, 60 * 1000)
 });
 
 function fetchTournaments() {
