@@ -1,3 +1,5 @@
+'use strict'
+
 const { createLogger, format, transports } = require("winston");
 const { EmbedBuilder } = require("discord.js")
 
@@ -6,47 +8,50 @@ const logger = createLogger({
     transports: [new transports.Console()],
 });
 
-function DiscordService(client, tournamentService, intervalInSeconds) {
-    client.login(process.env.DISCORD_TOKEN);
-    return {
-        client,
-        tournamentService,
-        intervalInSeconds,
-        publishTournaments
-    }
-}
+class DiscordService {
+    #client;
+    #tournamentService;
+    #intervalInSeconds;
 
-const publishTournament = (tournament, client) => {
-    const channel = client.channels.cache.get(process.env.TKT_NEWS_CHANNEL_ID);
-
-    if (!channel) {
-        console.error("Missing channel, exiting...");
-        return
+    constructor(client, tournamentService, intervalInSeconds) {
+        this.#client = client;
+        this.#tournamentService = tournamentService;
+        this.#intervalInSeconds = intervalInSeconds;
+        client.login(process.env.DISCORD_TOKEN);
     }
 
-    channel.messages.fetch()
-        .then(messages => {
-            if (!isAlreadyPublished(messages, tournament.url)) {
-                channel.send({ embeds: [buildEmbeddedTournament(tournament)] });
-            }
+    publishTournaments() {
+        this.#client.on('ready', async () => {
+            logger.info(`Logged in as ${this.#client.user.tag}`);
+
+            setInterval(() => this.#publishFetchedTournaments(), this.#intervalInSeconds * 1000)
         });
+    }
+
+    async #publishFetchedTournaments() {
+        logger.info("Start fetching tournaments...");
+
+        const tournaments = await this.#tournamentService.lookup();
+
+        tournaments.forEach(t => this.#publishTournament(t));
+    }
+
+    #publishTournament(tournament) {
+        const channel = this.#client.channels.cache.get(process.env.TKT_NEWS_CHANNEL_ID);
+
+        if (!channel) {
+            console.error("Missing channel, exiting...");
+            return
+        }
+
+        channel.messages.fetch()
+            .then(messages => {
+                if (!isAlreadyPublished(messages, tournament.url)) {
+                    channel.send({ embeds: [buildEmbeddedTournament(tournament)] });
+                }
+            });
+    }
 }
-
-function publishTournaments() {
-    this.client.on('ready', async () => {
-        logger.info(`Logged in as ${this.client.user.tag}`);
-
-        setInterval(async () => {
-            logger.info("Start fetching tournaments...");
-
-            const tournaments = await this.tournamentService.fetchTournaments();
-
-            tournaments.forEach(t => publishTournament(t, this.client))
-        }, this.intervalInSeconds * 1000)
-    });
-}
-
-
 
 function isAlreadyPublished(messages, tournamentUrl) {
     for (const [_, msg] of messages) {
