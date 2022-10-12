@@ -1,6 +1,7 @@
-query TournamentsByVideogame($videogameId: ID!, $coordinates: String!, $radius: String!, $afterDate: Timestamp!) {
+query TournamentsByVideogame($page: Int!, $videogameId: ID!, $coordinates: String!, $radius: String!, $afterDate: Timestamp!) {
   tournaments(query: {
-    page: 1
+    perPage: 100
+    page: $page
     sortBy: "startAt asc"
     filter: {
       location: {
