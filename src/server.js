@@ -32,7 +32,7 @@ const main = () => {
 
     new TournamentsPublisher(discordService, tournamentService, {
         intervalInSeconds,
-        START_GG_URL
+        baseUrl: START_GG_URL
     })
         .publishTournaments();
 }
