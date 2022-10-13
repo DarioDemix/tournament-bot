@@ -1,4 +1,5 @@
 const fs = require('fs')
+const logger = require('../logger')()
 
 class TournamentService {
     #graphqlApiEndpoint
@@ -24,6 +25,7 @@ class TournamentService {
             allTournaments.push(...partialTournaments);
         }
 
+        logger.debug(`Found ${allTournaments.length} tournaments.`);
         return allTournaments
     }
 

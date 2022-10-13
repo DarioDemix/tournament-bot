@@ -1,6 +1,4 @@
-const winston = require("winston");
-
-const logger = winston.loggers.get("primary");
+const logger = require("./logger")()
 
 const formatDate = timestamp => new Date(timestamp * 1000).toLocaleString('it');
 
@@ -36,10 +34,10 @@ class TournamentsPublisher {
     async #publishTournament(tournament) {
         const messages = await this.#discordService.getMessages();
         const description = `
-            Nuovo torneo nella città di ${message.city} [${message.countryCode}].
-            Il torneo comincia il ${formatDate(message.startAt)}.
-            Le iscrizioni scadono il ${formatDate(message.registrationClosesAt)}.
-            Il torneo è ${message.isOnline ? `online` : `offline`}`;
+            Nuovo torneo nella città di ${tournament.city} [${tournament.countryCode}].
+            Il torneo comincia il ${formatDate(tournament.startAt)}.
+            Le iscrizioni scadono il ${formatDate(tournament.registrationClosesAt)}.
+            Il torneo è ${tournament.isOnline ? `online` : `offline`}`;
 
         !isAlreadyPublished(messages, tournament.url) &&
             this.#discordService

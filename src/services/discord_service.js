@@ -1,9 +1,7 @@
-'use strict'
-
 const { EmbedBuilder } = require("discord.js");
-const winston = require("winston");
 
-const logger = winston.loggers.get("primary");
+const logger = require("../logger")()
+
 
 class DiscordService {
     #client;
@@ -17,8 +15,10 @@ class DiscordService {
     }
 
     apply = callback => {
-        logger.info(`Logged in as ${this.#client.user.tag}`);
-        this.#client.on('ready', callback);
+        this.#client.on('ready', () => {
+            logger.info(`Logged in as ${this.#client.user.tag}`);
+            callback();
+        });
     }
 
     getMessages() {

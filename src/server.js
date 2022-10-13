@@ -1,10 +1,10 @@
+require('dotenv').config();
 const DiscordService = require("./services/discord_service")
 const TournamentService = require("./services/tournament_service")
 const { Client, GatewayIntentBits } = require('discord.js');
 const TournamentsPublisher = require("./tournaments_publisher");
-const winston = require("winston");
-const { format, transports } = require("winston");
-require('dotenv').config();
+const logger = require("./logger")()
+
 
 const {
     INTERVAL_IN_SECONDS,
@@ -14,12 +14,6 @@ const {
     START_GG_TOKEN,
     DISCORD_TOKEN
 } = process.env;
-
-winston.loggers.add("primary", {
-    format: format.combine(format.timestamp(), format.json()),
-    transports: [new transports.Console()],
-});
-const logger = winston.loggers.get("primary");
 
 const client = new Client({
     intents: [
@@ -46,5 +40,6 @@ const main = () => {
 try {
     main();
 } catch (err) {
-    logger.error(err);
+    logger.error(err.stack);
+    process.exit();
 }
