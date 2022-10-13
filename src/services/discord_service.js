@@ -1,85 +1,55 @@
 'use strict'
 
-const { createLogger, format, transports } = require("winston");
-const { EmbedBuilder } = require("discord.js")
+const { EmbedBuilder } = require("discord.js");
+const winston = require("winston");
 
-const logger = createLogger({
-    format: format.combine(format.timestamp(), format.json()),
-    transports: [new transports.Console()],
-});
+const logger = winston.loggers.get("primary");
 
 class DiscordService {
     #client;
-    #tournamentService;
-    #intervalInSeconds;
+    #channelID;
 
-    constructor(client, tournamentService, intervalInSeconds) {
+    constructor(client, channelID, discordToken) {
         this.#client = client;
-        this.#tournamentService = tournamentService;
-        this.#intervalInSeconds = intervalInSeconds;
-        client.login(process.env.DISCORD_TOKEN);
+        this.#channelID = channelID;
+
+        client.login(discordToken);
     }
 
-    publishTournaments() {
-        this.#client.on('ready', async () => {
-            logger.info(`Logged in as ${this.#client.user.tag}`);
-
-            setInterval(() => this.#publishFetchedTournaments(), this.#intervalInSeconds * 1000)
-        });
+    apply = callback => {
+        logger.info(`Logged in as ${this.#client.user.tag}`);
+        this.#client.on('ready', callback);
     }
 
-    async #publishFetchedTournaments() {
-        logger.info("Start fetching tournaments...");
-
-        const tournaments = await this.#tournamentService.lookup();
-
-        tournaments.forEach(t => this.#publishTournament(t));
+    getMessages() {
+        const channel = this.#findChannelByID(this.#channelID);
+        return channel.messages.fetch();
     }
 
-    #publishTournament(tournament) {
-        const channel = this.#client.channels.cache.get(process.env.TKT_NEWS_CHANNEL_ID);
+    publishEmbeddedMessage(message, description, baseUrl) {
+        const channel = this.#findChannelByID(this.#channelID);
+        const builtMessage = this.#buildEmbeddedMessage(message, description, baseUrl);
+
+        channel.send({ embeds: [builtMessage] });
+    }
+
+    #findChannelByID(ID) {
+        const channel = this.#client.channels.cache.get(ID);
 
         if (!channel) {
-            console.error("Missing channel, exiting...");
-            return
+            throw new Error(`Channel with ID ${ID} is missing. Exiting`);
         }
 
-        channel.messages.fetch()
-            .then(messages => {
-                if (!isAlreadyPublished(messages, tournament.url)) {
-                    channel.send({ embeds: [buildEmbeddedTournament(tournament)] });
-                }
-            });
+        return channel;
     }
-}
 
-function isAlreadyPublished(messages, tournamentUrl) {
-    for (const [_, msg] of messages) {
-        if (msg.embeds[0]?.url?.endsWith(tournamentUrl)) return true;
+    #buildEmbeddedMessage(message, description, baseUrl) {
+        return new EmbedBuilder()
+            .setTitle(message.name)
+            .setDescription(description)
+            .setURL(`${baseUrl}${message.url}`)
+            .setThumbnail(message.images[0]?.url)
     }
-    return false
-}
-
-function buildEmbeddedTournament(tournament) {
-    const startTime = formatDate(tournament.startAt);
-    const registrationCloseTime = formatDate(tournament.registrationClosesAt);
-
-    const isOnline = `Il torneo è ${tournament.isOnline ? `online` : `offline`}`;
-
-    return new EmbedBuilder()
-        .setTitle(tournament.name)
-        .setDescription(`
-            Nuovo torneo nella città di ${tournament.city} [${tournament.countryCode}].
-            Il torneo comincia il ${startTime}
-            Le iscrizioni scadono il ${registrationCloseTime}
-            ${isOnline}
-        `)
-        .setURL(`https://start.gg${tournament.url}`)
-        .setThumbnail(tournament.images[0]?.url)
-}
-
-function formatDate(timestamp) {
-    return new Date(timestamp * 1000).toLocaleString('it');
 }
 
 module.exports = DiscordService;
