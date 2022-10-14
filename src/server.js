@@ -1,5 +1,4 @@
 require('dotenv').config();
-require('./api')()
 const DiscordService = require("./services/discord_service")
 const TournamentService = require("./services/tournament_service")
 const { Client, GatewayIntentBits } = require('discord.js');
